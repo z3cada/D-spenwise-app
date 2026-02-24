@@ -1,14 +1,25 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const { login, loading } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle login logic
-    console.log('Login attempt with:', { email, password });
+    setError('');
+
+    try {
+      await login(email, password);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Failed to sign in');
+    }
   };
 
   return (
@@ -17,11 +28,13 @@ const Login = () => {
         <h1 className="title">SpendWise</h1>
         <p className="subtitle">AI-driven personal finance insights</p>
 
+        {error && <div className="error-message" style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+
         <form onSubmit={handleSubmit}>
           <div className="field">
             <label className="label">Email</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               className="input"
               placeholder="you@example.com"
               value={email}
@@ -32,8 +45,8 @@ const Login = () => {
 
           <div className="field">
             <label className="label">Password</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               className="input"
               placeholder="Enter your password"
               value={password}
@@ -49,8 +62,8 @@ const Login = () => {
             <p className="demo-note">Any password works for demo accounts</p>
           </div>
 
-          <button type="submit" className="button">
-            Sign In
+          <button type="submit" className="button" disabled={loading}>
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
 
           <p className="footer">
@@ -62,4 +75,5 @@ const Login = () => {
   );
 };
 
-export default Login;onabort
+export default Login;
+onabort
