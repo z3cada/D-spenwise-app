@@ -1,7 +1,98 @@
-import React from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import './Predictions.css';
 
+// Simple Linear Regression simulation
+const calculatePrediction = (actualData) => {
+    const n = actualData.length;
+    if (n < 2) return { slope: 0, intercept: actualData[0]?.val || 0 };
+
+    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    actualData.forEach((d, i) => {
+        const x = i + 1;
+        const y = d.val;
+        sumX += x;
+        sumY += y;
+        sumXY += x * y;
+        sumXX += x * x;
+    });
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+
+    return { slope, intercept };
+};
+
+// ── Simulated Actual Data (First 12 days) ──
+const actualBase = [
+    120, 240, 310, 480, 590, 720, 850, 980, 1100, 1250, 1380, 1550
+];
+
 const Predictions = () => {
+
+    const { predictionData, stats } = useMemo(() => {
+        const actuals = actualBase.map((val, i) => ({ day: i + 1, val }));
+        const { slope, intercept } = calculatePrediction(actuals);
+
+        const data = [];
+        for (let i = 1; i <= 30; i++) {
+            const pred = Math.max(0, slope * i + intercept);
+            data.push({
+                day: i,
+                predicted: pred,
+                actual: i <= actualBase.length ? actualBase[i - 1] : null
+            });
+        }
+
+        const predictedTotal = data[29].predicted;
+        const budget = 2000;
+        const overBudget = Math.max(0, predictedTotal - budget);
+        const daysRemaining = 30 - actualBase.length;
+        const dailyLimit = overBudget > 0 ? 0 : (budget - actualBase[actualBase.length - 1]) / daysRemaining;
+
+        return {
+            predictionData: data,
+            stats: {
+                predictedTotal,
+                overBudget,
+                dailyLimit,
+                daysRemaining: 30 - actualBase.length,
+                confidence: 98.4
+            }
+        };
+    }, []);
+
+    const [hoveredPoint, setHoveredPoint] = useState(null);
+    const chartRef = useRef(null);
+
+    // ── Chart Helpers ──
+    const pad = { top: 40, right: 40, bottom: 50, left: 70 };
+    const w = 900, h = 280;
+    const iW = w - pad.left - pad.right;
+    const iH = h - pad.top - pad.bottom;
+    const maxY = 2400;
+    const budgetY = 2000;
+
+    const tx = (day) => pad.left + ((day - 1) / 29) * iW;
+    const ty = (val) => pad.top + iH - (val / maxY) * iH;
+
+    const buildPath = (data, key) => {
+        const pts = data.filter(d => d[key] != null);
+        return pts.map((d, i) => `${i === 0 ? 'M' : 'L'}${tx(d.day).toFixed(1)} ${ty(d[key]).toFixed(1)}`).join(' ');
+    };
+
+    const handleHover = (e) => {
+        if (!chartRef.current) return;
+        const rect = chartRef.current.getBoundingClientRect();
+        const mouseX = ((e.clientX - rect.left) / rect.width) * w;
+        let closest = null, minDist = Infinity;
+        predictionData.forEach(d => {
+            const dist = Math.abs(tx(d.day) - mouseX);
+            if (dist < minDist) { minDist = dist; closest = d; }
+        });
+        if (closest && minDist < iW / 30) setHoveredPoint(closest);
+        else setHoveredPoint(null);
+    };
+
     return (
         <div className="predictions-container">
             <header className="page-header">
@@ -11,93 +102,130 @@ const Predictions = () => {
                 </div>
             </header>
 
-            <div className="alert-banner risk">
-                <div className="alert-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+            <div className="alert-banner risk full-width">
+                <div className="alert-icon-container">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
                 </div>
                 <div className="alert-content">
                     <div className="alert-title">
                         High Risk of Overspending
                         <span className="badge danger">High Risk</span>
                     </div>
-                    <p className="alert-desc">At the current rate, you're projected to exceed your budget. Immediate action is recommended to reduce spending.</p>
+                    <p className="alert-desc">At the current rate, you're projected to exceed your budget by ₱{stats.overBudget.toFixed(2)}. Immediate action is recommended to reduce spending.</p>
                 </div>
             </div>
 
             <div className="predictions-grid">
                 <div className="card gauge-card">
-                    <div className="gauge-container">
-                        <svg viewBox="0 0 100 100" className="gauge">
-                            <circle className="gauge-bg" cx="50" cy="50" r="45" />
-                            <circle className="gauge-value" cx="50" cy="50" r="45" style={{ strokeDashoffset: 'calc(283 - (283 * 100) / 100)' }} />
-                            <text x="50" y="45" className="gauge-percent">100%</text>
-                            <text x="50" y="60" className="gauge-label">of budget</text>
-                        </svg>
+                    <div className="gauge-outer">
+                        <div className="gauge-container">
+                            <svg viewBox="0 0 100 100" className="gauge">
+                                <path d="M 20 80 A 40 40 0 1 1 80 80" fill="none" stroke="#1f1f23" strokeWidth="8" strokeLinecap="round" />
+                                <path d="M 20 80 A 40 40 0 1 1 80 80" fill="none" stroke="var(--danger)" strokeWidth="8" strokeLinecap="round" strokeDasharray="188.5" strokeDashoffset="0" />
+                                <text x="50" y="45" className="gauge-percent">100%</text>
+                                <text x="50" y="60" className="gauge-label">of budget</text>
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
-                <div className="card prediction-card">
-                    <div className="card-header">
-                        <p className="card-label">Predicted Total</p>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="trend-icon"><path d="m21 16-4-4" /><path d="M3 19a10 10 0 1 1 17.32 0" /></svg>
+                <div className="card stat-card">
+                    <div className="stat-content">
+                        <p className="stat-label">Predicted Total</p>
+                        <h2 className="stat-value">₱{stats.predictedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+                        <p className="stat-subtext danger">₱{stats.overBudget.toFixed(2)} over budget</p>
                     </div>
-                    <h2 className="card-value">$2,431.78</h2>
-                    <p className="card-subtext danger">$431.78 over budget</p>
+                    <div className="stat-icon-top">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 20-4-4h-3l2-2h3l2-2h-3l2-2h-3l2-2" /></svg>
+                    </div>
                 </div>
 
-                <div className="card prediction-card">
-                    <div className="card-header">
-                        <p className="card-label">Suggested Daily</p>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="trend-icon"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                <div className="card stat-card">
+                    <div className="stat-content">
+                        <p className="stat-label">Suggested Daily</p>
+                        <h2 className="stat-value">₱{stats.dailyLimit.toFixed(2)}</h2>
+                        <p className="stat-subtext">for {stats.daysRemaining} remaining days</p>
                     </div>
-                    <h2 className="card-value">$42.48</h2>
-                    <p className="card-subtext">for 9 remaining days</p>
+                    <div className="stat-icon-top">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>
+                    </div>
                 </div>
 
-                <div className="card prediction-card">
-                    <div className="card-header">
-                        <p className="card-label">Model Confidence</p>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="trend-icon"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+                <div className="card stat-card">
+                    <div className="stat-content">
+                        <p className="stat-label">Model Confidence</p>
+                        <h2 className="stat-value">{stats.confidence}%</h2>
+                        <p className="stat-subtext">R-squared accuracy</p>
                     </div>
-                    <h2 className="card-value">98%</h2>
-                    <p className="card-subtext">R-squared accuracy</p>
+                    <div className="stat-icon-top">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 9.5L12 2s7.5 7.5 7.5 7.5v8l-7.5 4.5-7.5-4.5z" /></svg>
+                    </div>
                 </div>
             </div>
 
-            <div className="card trajectory-section">
+            <div className="card trajectory-card full-width">
                 <div className="section-header">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="section-icon"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
                     <h3>Spending Trajectory</h3>
                 </div>
-                <p className="subtitle">Day-by-day projected spending with actual data overlay</p>
-
-                <div className="chart-area">
-                    <svg width="100%" height="300" viewBox="0 0 800 300">
-                        {/* Grid lines and labels */}
-                        {[0, 1, 2, 3, 4].map(i => (
-                            <g key={i}>
-                                <line x1="50" y1={250 - i * 50} x2="750" y2={250 - i * 50} stroke="#1f1f23" />
-                                <text x="40" y={250 - i * 50 + 5} textAnchor="end" fontSize="10" fill="#71717a">
-                                    ${i * 650}
-                                </text>
+                <p className="chart-subtitle">Day-by-day projected spending with actual data overlay</p>
+                <div className="chart-wrapper">
+                    <svg
+                        ref={chartRef}
+                        viewBox={`0 0 ${w} ${h}`}
+                        preserveAspectRatio="xMidYMid meet"
+                        className="interactive-chart"
+                        onMouseMove={handleHover}
+                        onMouseLeave={() => setHoveredPoint(null)}
+                    >
+                        {/* Grid lines */}
+                        {[0, 600, 1200, 1800, 2400].map(v => (
+                            <g key={v}>
+                                <line x1={pad.left} y1={ty(v)} x2={w - pad.right} y2={ty(v)} stroke="#1f1f23" strokeWidth="1" strokeDasharray="3 3" />
+                                <text x={pad.left - 12} y={ty(v) + 4} textAnchor="end" fill="#71717a" fontSize="11">₱{v}</text>
                             </g>
                         ))}
 
                         {/* X-axis days */}
-                        {[1, 5, 10, 15, 20, 25, 30].map(d => (
-                            <text key={d} x={50 + (d * 700 / 30)} y="270" textAnchor="middle" fontSize="10" fill="#71717a">
-                                {d}
-                            </text>
+                        {[1, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30].map(d => (
+                            <text key={d} x={tx(d)} y={h - 10} textAnchor="middle" fill="#71717a" fontSize="11">{d}</text>
                         ))}
 
-                        {/* Budget line */}
-                        <line x1="50" y1="100" x2="750" y2="100" stroke="var(--danger)" strokeWidth="1" strokeDasharray="4" />
+                        {/* Budget Threshold Line */}
+                        <line x1={pad.left} y1={ty(budgetY)} x2={w - pad.right} y2={ty(budgetY)} stroke="var(--danger)" strokeWidth="1" strokeDasharray="6 4" opacity="0.5" />
+                        <text x={w - pad.right + 5} y={ty(budgetY) + 4} fill="var(--danger)" fontSize="10" opacity="0.8">Budget</text>
 
-                        {/* Predicted path */}
-                        <path d="M50 250 L750 50" fill="none" stroke="#71717a" strokeWidth="1" strokeDasharray="4" />
+                        {/* Predicted Trajectory (Dashed) */}
+                        <path d={buildPath(predictionData, 'predicted')} fill="none" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="2" strokeDasharray="5 5" />
 
-                        {/* Actual path with ripple/area effect if possible, but keeping it simple */}
-                        <path d="M50 250 L100 240 L150 235 L200 210 L250 200 L300 160 L350 150 L400 130" fill="none" stroke="var(--primary)" strokeWidth="2" />
+                        {/* Actual Spending (Solid) */}
+                        <path d={buildPath(predictionData.filter(d => d.actual), 'actual')} fill="none" stroke="var(--primary)" strokeWidth="3" />
+
+                        {/* Hover elements */}
+                        {hoveredPoint && (
+                            <g>
+                                <line x1={tx(hoveredPoint.day)} y1={pad.top} x2={tx(hoveredPoint.day)} y2={h - pad.bottom} stroke="#3f3f46" strokeWidth="1" />
+                                {hoveredPoint.actual && (
+                                    <circle cx={tx(hoveredPoint.day)} cy={ty(hoveredPoint.actual)} r="5" fill="var(--primary)" stroke="#fff" strokeWidth="2" />
+                                )}
+                                <circle cx={tx(hoveredPoint.day)} cy={ty(hoveredPoint.predicted)} r="5" fill="#18181b" stroke="#71717a" strokeWidth="2" />
+
+                                {(() => {
+                                    const tipX = Math.min(tx(hoveredPoint.day) + 15, w - 180);
+                                    const tipY = Math.max(ty(hoveredPoint.predicted) - 80, pad.top);
+                                    return (
+                                        <g className="chart-tooltip">
+                                            <rect x={tipX} y={tipY} width={160} height={hoveredPoint.actual ? 70 : 50} rx="8" fill="#18181b" stroke="#27272a" strokeWidth="1" />
+                                            <text x={tipX + 12} y={tipY + 22} fill="#e4e4e7" fontSize="13" fontWeight="600">Day {hoveredPoint.day}</text>
+                                            {hoveredPoint.actual && (
+                                                <text x={tipX + 12} y={tipY + 42} fill="var(--primary)" fontSize="12" fontWeight="500">Actual : ₱{hoveredPoint.actual.toFixed(2)}</text>
+                                            )}
+                                            <text x={tipX + 12} y={tipY + (hoveredPoint.actual ? 60 : 42)} fill="#a1a1aa" fontSize="11">Predicted : ₱{hoveredPoint.predicted.toFixed(2)}</text>
+                                        </g>
+                                    );
+                                })()}
+                            </g>
+                        )}
                     </svg>
                 </div>
             </div>

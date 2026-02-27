@@ -115,3 +115,31 @@
 .recategorize-btn:hover {
     background-color: rgba(245, 158, 11, 0.1);
 }
+
+@media (max-width: 1024px) {
+    .feedback-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .feedback-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .review-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    .review-actions {
+        width: 100%;
+    }
+
+    .correct-btn,
+    .recategorize-btn {
+        flex: 1;
+        justify-content: center;
+    }
+}

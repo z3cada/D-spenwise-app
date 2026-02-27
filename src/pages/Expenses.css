@@ -122,3 +122,62 @@
 .text-right {
     text-align: right !important;
 }
+
+@media (max-width: 1024px) {
+    .expenses-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.25rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .add-expense-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .expenses-stats {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .table-header {
+        padding: 1.25rem;
+    }
+
+    .table-controls {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .search-bar {
+        width: 100%;
+    }
+
+    .category-select {
+        width: 100%;
+        padding: 0.6rem 1rem;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -1.25rem;
+        padding: 0 1.25rem;
+    }
+
+    .expenses-table th,
+    .expenses-table td {
+        padding: 1rem 0.75rem;
+        white-space: nowrap;
+    }
+}

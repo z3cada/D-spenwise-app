@@ -2,29 +2,59 @@
     animation: fadeIn 0.5s ease;
 }
 
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.page-header p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Alert Banner */
 .alert-banner {
     display: flex;
     gap: 1.25rem;
     padding: 1.5rem;
     border-radius: 12px;
     margin-bottom: 2rem;
+    background-color: rgba(69, 10, 10, 0.4);
+    /* Dark red background */
+    border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-.alert-banner.risk {
-    background-color: rgba(239, 68, 68, 0.05);
-    border: 1px solid rgba(239, 68, 68, 0.1);
-}
-
-.alert-icon {
+.alert-icon-container {
     width: 44px;
     height: 44px;
-    background-color: var(--danger-glow);
+    background-color: rgba(239, 68, 68, 0.15);
     color: var(--danger);
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.alert-content {
+    flex: 1;
 }
 
 .alert-title {
@@ -37,74 +67,192 @@
 }
 
 .alert-desc {
-    color: var(--text-muted);
+    color: #a1a1aa;
     font-size: 0.9rem;
+    line-height: 1.5;
 }
 
+.badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge.danger {
+    background-color: var(--danger);
+    color: #ffffff;
+}
+
+/* Grid Layout */
 .predictions-grid {
     display: grid;
-    grid-template-columns: 200px 1fr 1fr 1fr;
+    grid-template-columns: 240px 1fr 1fr 1fr;
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
 
-.prediction-card {
-    padding: 1.25rem;
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+/* Gauge Card */
+.gauge-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.gauge-container {
+    width: 160px;
+    height: 120px;
+    overflow: hidden;
+}
+
+.gauge-percent {
+    fill: var(--text-main);
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-anchor: middle;
+}
+
+.gauge-label {
+    fill: var(--text-muted);
+    font-size: 0.5rem;
+    text-anchor: middle;
+}
+
+/* Stat Cards */
+.stat-card {
+    position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
+    min-height: 140px;
 }
 
-.trend-icon {
+.stat-label {
+    font-size: 0.85rem;
     color: var(--text-muted);
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: 1rem;
 }
 
-.card-label {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-
-.card-value {
-    font-size: 1.6rem;
+.stat-value {
+    font-size: 1.8rem;
     font-weight: 700;
-    margin-bottom: 0.25rem;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
 }
 
-.card-subtext {
-    font-size: 0.75rem;
+.stat-subtext {
+    font-size: 0.85rem;
     color: var(--text-muted);
+    margin-top: 0.5rem;
 }
 
-.card-subtext.danger {
+.stat-subtext.danger {
     color: var(--danger);
 }
 
-.trajectory-section {
-    padding: 2rem;
+.stat-icon-top {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    color: var(--text-muted);
+    opacity: 0.4;
+}
+
+/* Trajectory Section */
+.trajectory-card {
+    padding: 1.5rem;
 }
 
 .section-header {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 
-.section-icon {
+.section-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.chart-subtitle {
+    font-size: 0.85rem;
     color: var(--text-muted);
+    margin-bottom: 1.25rem;
 }
 
-.chart-area {
-    margin-top: 2rem;
+.chart-wrapper {
+    width: 100%;
 }
 
-.chart-area svg {
+.interactive-chart {
+    width: 100%;
+    height: auto;
+    display: block;
     overflow: visible;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.chart-tooltip rect {
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+
+@media (max-width: 1024px) {
+    .predictions-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .predictions-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .alert-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1.25rem;
+        gap: 1rem;
+    }
+
+    .alert-icon-container {
+        width: 40px;
+        height: 40px;
+    }
+
+    .alert-title {
+        font-size: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .trajectory-card {
+        padding: 1.25rem;
+    }
+
+    .chart-wrapper {
+        margin: 0 -0.5rem;
+        width: calc(100% + 1rem);
+    }
 }

@@ -1,7 +1,156 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import './Dashboard.css';
+import AddExpenseModal from '../components/AddExpenseModal';
 
 const Dashboard = () => {
+    // ══════════════════════════════════════════════════════════
+    // ARRAY #1: Expenses Array (Array of Objects)
+    // Each element is an object with id, date, description, category, amount.
+    // We use useState so React re-renders when the array changes.
+    // ══════════════════════════════════════════════════════════
+    const [expenses, setExpenses] = useState([
+        { id: 1, date: '2026-02-20', description: 'Grocery Store', category: 'Food & Dining', amount: 26.13 },
+        { id: 2, date: '2026-02-19', description: 'Dinner Out', category: 'Food & Dining', amount: 13.62 },
+        { id: 3, date: '2026-02-19', description: 'Clothing Store', category: 'Shopping', amount: 83.45 },
+    ]);
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // ══════════════════════════════════════════════════════════
+    // ARRAY METHOD: .push() via setExpenses
+    // When a new expense is added, we create a new array with
+    // the new item at the front using the spread operator [...prev]
+    // ══════════════════════════════════════════════════════════
+    const handleAddExpense = (newExpense) => {
+        const newEntry = {
+            id: Date.now(),
+            ...newExpense
+        };
+        setExpenses(prev => [newEntry, ...prev]);
+        setIsModalOpen(false);
+    };
+
+    // ══════════════════════════════════════════════════════════
+    // ARRAY METHOD: .reduce() — Computes the total of all amounts
+    // This loops through every item in the expenses array and
+    // adds up the 'amount' field to get the total spending.
+    // ══════════════════════════════════════════════════════════
+    const totalSpending = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+    // ══════════════════════════════════════════════════════════
+    // ARRAY #2: Categories Array (Simple String Array)
+    // Used to define what categories are available in the system.
+    // This same array can be reused in dropdowns and filters.
+    // ══════════════════════════════════════════════════════════
+    const categories = ['Food & Dining', 'Shopping', 'Transport', 'Health', 'Education', 'Entertainment', 'Utilities'];
+
+    // ══════════════════════════════════════════════════════════
+    // ARRAY #3: Summary Stats Array (Array of Objects)
+    // Instead of hardcoding each stat card, we define them in
+    // an array and use .map() to render them dynamically.
+    // ══════════════════════════════════════════════════════════
+    const summaryStats = [
+        { label: 'Monthly Budget', value: '₱2,000.00' },
+        { label: 'Current Spending', value: `₱${totalSpending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+        { label: 'Total Expenses', value: expenses.length },     // .length — counts items in the array
+        { label: 'Over Budget', value: `₱${Math.max(0, totalSpending - 2000).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+    ];
+
+    // ── Trajectory Chart data & state ──
+    const trajectoryData = [
+        { day: 1, actual: 100, predicted: 110 },
+        { day: 2, actual: 210, predicted: 220 },
+        { day: 3, actual: 280, predicted: 310 },
+        { day: 4, actual: 400, predicted: 430 },
+        { day: 5, actual: 550, predicted: 580 },
+        { day: 6, actual: 750, predicted: 760 },
+        { day: 7, actual: 820, predicted: 890 },
+        { day: 8, actual: 1000, predicted: 1050 },
+        { day: 9, actual: 1250, predicted: 1200 },
+        { day: 10, actual: 1350, predicted: 1320 },
+        { day: 11, actual: 1480, predicted: 1420 },
+        { day: 12, actual: 1604.24, predicted: 1552.17 },
+        { day: 13, predicted: 1700 },
+        { day: 14, predicted: 1820 },
+        { day: 15, predicted: 1950 },
+        { day: 16, predicted: 2050 },
+        { day: 17, predicted: 2180 },
+        { day: 18, predicted: 2290 },
+        { day: 19, predicted: 2400 },
+        { day: 20, predicted: 2550 },
+        { day: 21, predicted: 2680 },
+        { day: 22, predicted: 2800 },
+        { day: 23, predicted: 2950 },
+        { day: 24, predicted: 3080 },
+        { day: 25, predicted: 3200 },
+        { day: 26, predicted: 3350 },
+        { day: 27, predicted: 3500 },
+        { day: 28, predicted: 3600 },
+    ];
+
+    const [hoveredPoint, setHoveredPoint] = useState(null);
+    const trajRef = useRef(null);
+
+    // ══════════════════════════════════════════════════════════
+    // ARRAY #5: Category Chart Data (Array of Objects)
+    // Each element has a label and amount. We use .map() later
+    // to render each bar in the horizontal bar chart.
+    // ══════════════════════════════════════════════════════════
+    const categoryData = [
+        { label: 'Food & Dining', amount: 950 },
+        { label: 'Shopping', amount: 780 },
+        { label: 'Transport', amount: 320 },
+        { label: 'Health', amount: 310 },
+        { label: 'Education', amount: 220 },
+        { label: 'Entertainment', amount: 150 },
+    ];
+    const maxCategory = 1200;
+    const [hoveredBar, setHoveredBar] = useState(null);
+
+    // ── Trajectory helpers ──
+    const tPad = { top: 20, right: 20, bottom: 30, left: 50 };
+    const tW = 560, tH = 260;
+    const innerW = tW - tPad.left - tPad.right;
+    const innerH = tH - tPad.top - tPad.bottom;
+    const maxY = 3400;
+    const yTicks = [0, 850, 1700, 2550, 3400];
+
+    const tx = (day) => tPad.left + ((day - 1) / 27) * innerW;
+    const ty = (val) => tPad.top + innerH - (val / maxY) * innerH;
+
+    const buildPath = (data, key) => {
+        const pts = data.filter(d => d[key] != null);
+        return pts.map((d, i) => `${i === 0 ? 'M' : 'L'}${tx(d.day).toFixed(1)} ${ty(d[key]).toFixed(1)}`).join(' ');
+    };
+
+    const actualPath = buildPath(trajectoryData, 'actual');
+    const predictedPath = buildPath(trajectoryData, 'predicted');
+
+    const handleTrajHover = (e) => {
+        if (!trajRef.current) return;
+        const rect = trajRef.current.getBoundingClientRect();
+        const mouseX = ((e.clientX - rect.left) / rect.width) * tW;
+        let closest = null, minDist = Infinity;
+        trajectoryData.forEach(d => {
+            const dist = Math.abs(tx(d.day) - mouseX);
+            if (dist < minDist) { minDist = dist; closest = d; }
+        });
+        if (closest && minDist < innerW / 28) {
+            setHoveredPoint(closest);
+        } else {
+            setHoveredPoint(null);
+        }
+    };
+
+    // ── Category helpers ──
+    const cPad = { top: 30, right: 30, bottom: 30, left: 110 };
+    const cW = 560, cH = 280;
+    const cInnerW = cW - cPad.left - cPad.right;
+    const cInnerH = cH - cPad.top - cPad.bottom;
+    const barH = 20;
+    const barGap = (cInnerH - categoryData.length * barH) / (categoryData.length + 1);
+    const xTicks = [0, 300, 600, 900, 1200];
+
     return (
         <div className="dashboard-container">
             <header className="page-header">
@@ -9,121 +158,153 @@ const Dashboard = () => {
                     <h1>Budget Dashboard</h1>
                     <p>Track your spending and AI predictions</p>
                 </div>
-                <button className="add-expense-btn">
+                <button className="add-expense-btn" onClick={() => setIsModalOpen(true)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
                     Add Expense
                 </button>
             </header>
 
             <div className="dashboard-grid">
-                {/* Gauge Section */}
-                <div className="card gauge-card">
-                    <div className="gauge-container">
-                        <svg viewBox="0 0 100 100" className="gauge">
-                            <circle className="gauge-bg" cx="50" cy="50" r="45" />
-                            <circle className="gauge-value" cx="50" cy="50" r="45" style={{ strokeDashoffset: 'calc(283 - (283 * 100) / 100)' }} />
-                            <text x="50" y="45" className="gauge-percent">100%</text>
-                            <text x="50" y="60" className="gauge-label">of budget</text>
-                        </svg>
-                    </div>
-                    <div className="gauge-info">
-                        <p className="info-label">Predicted vs Budget</p>
-                        <span className="badge danger">High Risk</span>
-                    </div>
-                </div>
-
-                {/* Summary Stats */}
-                <div className="summary-stats">
-                    <div className="card stat-card">
-                        <div className="stat-content">
-                            <p className="stat-label">Monthly Budget</p>
-                            <h2 className="stat-value">$2,000.00</h2>
-                        </div>
-                        <div className="stat-icon budget-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" /><path d="M12 18V6" /></svg>
-                        </div>
-                    </div>
-
-                    <div className="card stat-card">
-                        <div className="stat-content">
-                            <p className="stat-label">Current Spending</p>
-                            <h2 className="stat-value">$1,617.71</h2>
-                        </div>
-                        <div className="stat-icon spending-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                {/* ── Top Row: Gauge and Stats ── */}
+                <div className="top-row-grid full-width">
+                    <div className="card gauge-card">
+                        <div className="gauge-outer">
+                            <div className="gauge-container">
+                                <svg viewBox="0 0 100 100" className="gauge">
+                                    <path
+                                        d="M 20 80 A 40 40 0 1 1 80 80"
+                                        fill="none"
+                                        stroke="#1f1f23"
+                                        strokeWidth="8"
+                                        strokeLinecap="round"
+                                    />
+                                    <path
+                                        d="M 20 80 A 40 40 0 1 1 80 80"
+                                        fill="none"
+                                        stroke="var(--danger)"
+                                        strokeWidth="8"
+                                        strokeLinecap="round"
+                                        strokeDasharray="188.5"
+                                        strokeDashoffset="0"
+                                    />
+                                    <text x="50" y="45" className="gauge-percent">100%</text>
+                                    <text x="50" y="60" className="gauge-label">of budget</text>
+                                </svg>
+                            </div>
+                            <p className="gauge-subtext">Predicted vs Budget</p>
+                            <span className="badge danger">High Risk</span>
                         </div>
                     </div>
 
-                    <div className="card stat-card">
-                        <div className="stat-content">
-                            <p className="stat-label">Predicted Total</p>
-                            <h2 className="stat-value">$2,431.78</h2>
-                            <p className="stat-subtext">98% confidence</p>
-                        </div>
-                        <div className="stat-icon prediction-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 20-4-4h-3l2-2h3l2-2h-3l2-2h-3l2-2" /></svg>
-                        </div>
-                    </div>
-
-                    <div className="card stat-card">
-                        <div className="stat-content">
-                            <p className="stat-label">Daily Limit</p>
-                            <h2 className="stat-value">$42.48</h2>
-                            <p className="stat-subtext">9 days remaining</p>
-                        </div>
-                        <div className="stat-icon daily-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Charts */}
-                <div className="card chart-card trajectory-chart">
-                    <h3>Spending Trajectory</h3>
-                    <p className="chart-subtitle">Actual vs predicted spending this month</p>
-                    <div className="chart-placeholder">
-                        <svg width="100%" height="200" viewBox="0 0 400 200">
-                            {/* Grid Lines */}
-                            <line x1="0" y1="20" x2="400" y2="20" stroke="#1f1f23" strokeWidth="1" />
-                            <line x1="0" y1="60" x2="400" y2="60" stroke="#1f1f23" strokeWidth="1" />
-                            <line x1="0" y1="100" x2="400" y2="100" stroke="#1f1f23" strokeWidth="1" />
-                            <line x1="0" y1="140" x2="400" y2="140" stroke="#1f1f23" strokeWidth="1" />
-                            <line x1="0" y1="180" x2="400" y2="180" stroke="#1f1f23" strokeWidth="1" />
-
-                            {/* Predicted Line (Dashed) */}
-                            <path d="M0 180 L100 150 L200 120 L300 90 L400 60" fill="none" stroke="rgba(113, 113, 122, 0.5)" strokeWidth="2" strokeDasharray="4" />
-
-                            {/* Actual Line */}
-                            <path d="M0 180 L50 175 L100 160 L150 145 L200 135 L250 110 L300 105" fill="none" stroke="var(--primary)" strokeWidth="3" />
-
-                            {/* Budget Line (Red) */}
-                            <line x1="0" y1="60" x2="400" y2="60" stroke="var(--danger)" strokeWidth="1" strokeDasharray="4" />
-                        </svg>
-                    </div>
-                </div>
-
-                <div className="card chart-card category-chart">
-                    <h3>Top Spending Categories</h3>
-                    <p className="chart-subtitle">Highest spending areas this month</p>
-                    <div className="bar-list">
-                        {[
-                            { label: 'Food & Dining', amount: 720, max: 800 },
-                            { label: 'Health', amount: 280, max: 800 },
-                            { label: 'Shopping', amount: 260, max: 800 },
-                            { label: 'Entertainment', amount: 220, max: 800 },
-                            { label: 'Transport', amount: 180, max: 800 },
-                            { label: 'Utilities', amount: 120, max: 800 },
-                        ].map((cat, i) => (
-                            <div key={i} className="bar-item">
-                                <div className="bar-labels">
-                                    <span className="bar-name">{cat.label}</span>
-                                    <span className="bar-value">${cat.amount}</span>
-                                </div>
-                                <div className="bar-container">
-                                    <div className="bar-fill" style={{ width: `${(cat.amount / cat.max) * 100}%` }}></div>
+                    {/* ══ ARRAY .map() — Renders stat cards dynamically from summaryStats array ══ */}
+                    <div className="summary-stats">
+                        {summaryStats.map((stat, index) => (
+                            <div className="card stat-card" key={index}>
+                                <div className="stat-content">
+                                    <p className="stat-label">{stat.label}</p>
+                                    <h2 className="stat-value">{stat.value}</h2>
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+
+                {/* ── Charts Row ── */}
+                <div className="charts-row full-width">
+                    <div className="card chart-card trajectory-chart">
+                        <h3>Spending Trajectory</h3>
+                        <p className="chart-subtitle">Actual vs predicted spending this month</p>
+                        <div className="chart-wrapper">
+                            <svg ref={trajRef} viewBox={`0 0 ${tW} ${tH}`} preserveAspectRatio="xMidYMid meet" className="interactive-chart" onMouseMove={handleTrajHover} onMouseLeave={() => setHoveredPoint(null)}>
+                                {yTicks.map(v => (
+                                    <g key={v}>
+                                        <line x1={tPad.left} y1={ty(v)} x2={tW - tPad.right} y2={ty(v)} stroke="#1f1f23" strokeWidth="1" strokeDasharray="3 3" />
+                                        <text x={tPad.left - 8} y={ty(v) + 4} textAnchor="end" fill="#71717a" fontSize="10">₱{v.toLocaleString()}</text>
+                                    </g>
+                                ))}
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28].map(day => (
+                                    <text key={day} x={tx(day)} y={tH - 8} textAnchor="middle" fill="#71717a" fontSize="9">{day}</text>
+                                ))}
+                                <path d={predictedPath} fill="none" stroke="rgba(113, 113, 122, 0.5)" strokeWidth="2" strokeDasharray="5 4" />
+                                <path d={actualPath} fill="none" stroke="var(--primary)" strokeWidth="3" />
+                                {hoveredPoint && (
+                                    <g>
+                                        <line x1={tx(hoveredPoint.day)} y1={tPad.top} x2={tx(hoveredPoint.day)} y2={tH - tPad.bottom} stroke="#e4e4e7" strokeWidth="1" />
+                                        {hoveredPoint.actual != null && (
+                                            <circle cx={tx(hoveredPoint.day)} cy={ty(hoveredPoint.actual)} r="5" fill="var(--primary)" stroke="#fff" strokeWidth="2" />
+                                        )}
+                                        {(() => {
+                                            const tooltipX = tx(hoveredPoint.day) + 12;
+                                            const tooltipY = Math.max(ty(hoveredPoint.predicted ?? hoveredPoint.actual) - 10, 10);
+                                            const boxW = 120, boxH = hoveredPoint.actual != null && hoveredPoint.predicted != null ? 68 : 48;
+                                            const clampedX = Math.min(tooltipX, tW - tPad.right - boxW - 5);
+                                            return (
+                                                <g>
+                                                    <rect x={clampedX} y={tooltipY} width={boxW} height={boxH} rx="8" fill="#18181b" stroke="#27272a" strokeWidth="1" />
+                                                    <text x={clampedX + 12} y={tooltipY + 20} fill="#e4e4e7" fontSize="12" fontWeight="500">Day {hoveredPoint.day}</text>
+                                                    {hoveredPoint.actual != null && (
+                                                        <text x={clampedX + 12} y={tooltipY + 38} fill="var(--primary)" fontSize="12" fontWeight="600">
+                                                            ₱{hoveredPoint.actual.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        </text>
+                                                    )}
+                                                    {hoveredPoint.predicted != null && (
+                                                        <text x={clampedX + 12} y={tooltipY + (hoveredPoint.actual != null ? 56 : 38)} fill="#a1a1aa" fontSize="11">
+                                                            ₱{hoveredPoint.predicted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        </text>
+                                                    )}
+                                                </g>
+                                            );
+                                        })()}
+                                    </g>
+                                )}
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div className="card chart-card category-chart">
+                        <h3>Top Spending Categories</h3>
+                        <p className="chart-subtitle">Highest spending areas this month</p>
+                        <div className="chart-wrapper">
+                            <svg viewBox={`0 0 ${cW} ${cH}`} preserveAspectRatio="xMidYMid meet" className="interactive-chart">
+                                {xTicks.map(v => {
+                                    const xPos = cPad.left + (v / maxCategory) * cInnerW;
+                                    return (
+                                        <g key={v}>
+                                            <line x1={xPos} y1={cPad.top} x2={xPos} y2={cH - cPad.bottom} stroke="#1f1f23" strokeWidth="1" strokeDasharray="3 3" />
+                                            <text x={xPos} y={cH - 10} textAnchor="middle" fill="#71717a" fontSize="10">₱{v}</text>
+                                        </g>
+                                    );
+                                })}
+                                {categoryData.map((cat, i) => {
+                                    const barY = cPad.top + barGap * (i + 1) + barH * i;
+                                    const barWidth = (cat.amount / maxCategory) * cInnerW;
+                                    const isHovered = hoveredBar === i;
+                                    return (
+                                        <g key={i} onMouseEnter={() => setHoveredBar(i)} onMouseLeave={() => setHoveredBar(null)} style={{ cursor: 'pointer' }}>
+                                            <rect x={cPad.left} y={barY - 4} width={cInnerW} height={barH + 8} fill="transparent" />
+                                            <rect x={cPad.left} y={barY} width={cInnerW} height={barH} rx="2" fill="#1f1f23" />
+                                            <rect x={cPad.left} y={barY} width={barWidth} height={barH} rx="2" fill={isHovered ? '#e4e4e7' : 'var(--primary)'} className="bar-rect" />
+                                            <text x={cPad.left - 8} y={barY + barH / 2 + 4} textAnchor="end" fill="#a1a1aa" fontSize="10">{cat.label}</text>
+                                            {isHovered && (() => {
+                                                const tipX = cPad.left + barWidth + 12;
+                                                const tipY = barY - 8;
+                                                const tipW = 140, tipH = 52;
+                                                const clampedX = Math.min(tipX, cW - cPad.right - tipW);
+                                                return (
+                                                    <g>
+                                                        <rect x={clampedX} y={tipY} width={tipW} height={tipH} rx="8" fill="#18181b" stroke="#27272a" strokeWidth="1" />
+                                                        <text x={clampedX + 12} y={tipY + 20} fill="#e4e4e7" fontSize="11" fontWeight="500">{cat.label}</text>
+                                                        <text x={clampedX + 12} y={tipY + 40} fill="var(--primary)" fontSize="11" fontWeight="600">
+                                                            Total : ₱{cat.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        </text>
+                                                    </g>
+                                                );
+                                            })()}
+                                        </g>
+                                    );
+                                })}
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
@@ -141,29 +322,26 @@ const Dashboard = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>2/20/2026</td>
-                                    <td>Grocery Store</td>
-                                    <td><span className="category-pill">Food & Dining</span></td>
-                                    <td className="amount">$26.13</td>
-                                </tr>
-                                <tr>
-                                    <td>2/19/2026</td>
-                                    <td>Dinner Out</td>
-                                    <td><span className="category-pill">Food & Dining</span></td>
-                                    <td className="amount">$13.62</td>
-                                </tr>
-                                <tr>
-                                    <td>2/19/2026</td>
-                                    <td>Clothing Store</td>
-                                    <td><span className="category-pill">Shopping</span></td>
-                                    <td className="amount">$83.45</td>
-                                </tr>
+                                {expenses.map((expense) => (
+                                    <tr key={expense.id}>
+                                        <td>{new Date(expense.date).toLocaleDateString()}</td>
+                                        <td>{expense.description}</td>
+                                        <td><span className="category-pill">{expense.category}</span></td>
+                                        <td className="amount">₱{expense.amount.toFixed(2)}</td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+
+            {/* Reusable Modal Component */}
+            <AddExpenseModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onAdd={handleAddExpense}
+            />
         </div>
     );
 };

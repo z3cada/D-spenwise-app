@@ -2,7 +2,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Sidebar from './components/Sidebar';
+import MainLayout from './components/MainLayout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
@@ -20,63 +20,38 @@ function App() {
             {/* Public routes - no sidebar, no login required */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            
-            {/* Protected routes - with sidebar, login required */}
+
+            {/* Protected routes wrapped in MainLayout */}
             <Route path="/" element={
               <ProtectedRoute>
-                <div className="app-shell">
-                  <Sidebar />
-                  <main className="main-content">
-                    <Dashboard />
-                  </main>
-                </div>
+                <MainLayout><Dashboard /></MainLayout>
               </ProtectedRoute>
             } />
-            
+
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <div className="app-shell">
-                  <Sidebar />
-                  <main className="main-content">
-                    <Dashboard />
-                  </main>
-                </div>
+                <MainLayout><Dashboard /></MainLayout>
               </ProtectedRoute>
             } />
-            
+
             <Route path="/expenses" element={
               <ProtectedRoute>
-                <div className="app-shell">
-                  <Sidebar />
-                  <main className="main-content">
-                    <Expenses />
-                  </main>
-                </div>
+                <MainLayout><Expenses /></MainLayout>
               </ProtectedRoute>
             } />
-            
+
             <Route path="/predictions" element={
               <ProtectedRoute>
-                <div className="app-shell">
-                  <Sidebar />
-                  <main className="main-content">
-                    <Predictions />
-                  </main>
-                </div>
+                <MainLayout><Predictions /></MainLayout>
               </ProtectedRoute>
             } />
-            
+
             <Route path="/feedback" element={
               <ProtectedRoute>
-                <div className="app-shell">
-                  <Sidebar />
-                  <main className="main-content">
-                    <Feedback />
-                  </main>
-                </div>
+                <MainLayout><Feedback /></MainLayout>
               </ProtectedRoute>
             } />
-            
+
             {/* Catch all - redirect to login */}
             <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
