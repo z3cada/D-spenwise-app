@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './Dashboard.css';
 import AddExpenseModal from '../components/AddExpenseModal';
+import Button from '../components/Button';
+import Card from '../components/Card';
 
 const Dashboard = () => {
     // ══════════════════════════════════════════════════════════
@@ -175,16 +177,16 @@ const Dashboard = () => {
                     <h1>Budget Dashboard</h1>
                     <p>Track your spending and AI predictions</p>
                 </div>
-                <button className="add-expense-btn" onClick={() => setIsModalOpen(true)}>
+                <Button className="add-expense-btn" onClick={() => setIsModalOpen(true)}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
                     Add Expense
-                </button>
+                </Button>
             </header>
 
             <div className="dashboard-grid">
                 {/* ── Top Row: Gauge and Stats ── */}
                 <div className="top-row-grid full-width">
-                    <div className="card gauge-card">
+                    <Card className="gauge-card">
                         <div className="gauge-outer">
                             <div className="gauge-container">
                                 <svg viewBox="0 0 100 100" className="gauge">
@@ -211,24 +213,24 @@ const Dashboard = () => {
                             <p className="gauge-subtext">Predicted vs Budget</p>
                             <span className="badge danger">High Risk</span>
                         </div>
-                    </div>
+                    </Card>
 
                     {/* ══ ARRAY .map() — Renders stat cards dynamically from summaryStats array ══ */}
                     <div className="summary-stats">
                         {summaryStats.map((stat, index) => (
-                            <div className="card stat-card" key={index}>
+                            <Card className="stat-card" key={index}>
                                 <div className="stat-content">
                                     <p className="stat-label">{stat.label}</p>
                                     <h2 className="stat-value">{stat.value}</h2>
                                 </div>
-                            </div>
+                            </Card>
                         ))}
                     </div>
                 </div>
 
                 {/* ── Charts Row ── */}
                 <div className="charts-row full-width">
-                    <div className="card chart-card trajectory-chart">
+                    <Card className="chart-card trajectory-chart">
                         <h3>Spending Trajectory</h3>
                         <p className="chart-subtitle">Actual vs predicted spending this month</p>
                         <div className="chart-wrapper">
@@ -276,9 +278,9 @@ const Dashboard = () => {
                                 )}
                             </svg>
                         </div>
-                    </div>
+                    </Card>
 
-                    <div className="card chart-card category-chart">
+                    <Card className="chart-card category-chart">
                         <h3>Top Spending Categories</h3>
                         <p className="chart-subtitle">Highest spending areas this month</p>
                         <div className="chart-wrapper">
@@ -322,11 +324,11 @@ const Dashboard = () => {
                                 })}
                             </svg>
                         </div>
-                    </div>
+                    </Card>
                 </div>
 
                 {/* Recent Expenses */}
-                <div className="card full-width">
+                <Card className="full-width">
                     <h3>Recent Expenses</h3>
                     <div className="table-container">
                         <table className="recent-table">
@@ -350,7 +352,7 @@ const Dashboard = () => {
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </Card>
             </div>
 
             {/* Reusable Modal Component */}
